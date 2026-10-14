@@ -1,0 +1,74 @@
+# App_Parcial1: MySQL 8.4 + carga inicial + GUI Streamlit, en una red Docker propia.
+#
+#   ./instalar.sh            (o: docker compose up -d --build)
+#
+# Orden de arranque: mysql (sano) -> carga (termina con éxito) -> app.
+# Los datos viven en el volumen app_parcial1_mysql: sobreviven a `docker compose down`
+# y solo se borran con `docker compose down -v` (./limpiar.sh).
+
+name: app_parcial1
+
+x-conexion: &conexion
+  DB_HOST: mysql            # nombre del servicio, resuelto por el DNS interno de Docker
+  DB_PORT: 3306
+  DB_NAME: ${MYSQL_DATABASE:-gwosc}
+  DB_USER: ${MYSQL_USER:-gwuser}
+  DB_PASSWORD: ${MYSQL_PASSWORD:-gwpass}
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: app_parcial1-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-ondas_gravitacionales}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gwosc}
+      MYSQL_USER: ${MYSQL_USER:-gwuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gwpass}
+      TZ: UTC
+    ports:
+      - "${MYSQL_PORT:-3308}:3306"   # para DBeaver o para correr la app fuera de Docker
+    volumes:
+      - mysql_datos:/var/lib/mysql
+      # Se ejecuta solo la primera vez, cuando el volumen está vacío.
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    networks: [red_gw]
+    healthcheck:
+      # Por TCP a 127.0.0.1: durante la inicialización MySQL corre sin red, así que el chequeo
+      # no da "sano" hasta que schema.sql terminó de aplicarse.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  carga:
+    build: { context: ., dockerfile: app/Dockerfile }
+    image: app_parcial1-app:latest
+    container_name: app_parcial1-carga
+    command: ["python", "cargar_datos.py"]
+    environment: *conexion
+    networks: [red_gw]
+    restart: "no"
+    depends_on:
+      mysql: { condition: service_healthy }
+
+  app:
+    image: app_parcial1-app:latest
+    container_name: app_parcial1-app
+    restart: unless-stopped
+    environment: *conexion
+    ports:
+      - "${APP_PORT:-8502}:8501"
+    networks: [red_gw]
+    depends_on:
+      carga: { condition: service_completed_successfully }
+
+networks:
+  red_gw:
+    name: app_parcial1_red
+
+volumes:
+  mysql_datos:
+    name: app_parcial1_mysql

@@ -1,0 +1,4 @@
+catalogo,ano_publicacion,campanas_cubiertas,referencia,doi
+GWTC-1-confident,2019,"O1, O2","Abbott et al., Phys. Rev. X 9, 031040 (2019)",10.1103/PhysRevX.9.031040
+GWTC-2.1-confident,2021,"O1, O2, O3a","Abbott et al., Phys. Rev. D 109, 022001 (2024)",10.1103/PhysRevD.109.022001
+GWTC-3-confident,2023,O3b,"Abbott et al., Phys. Rev. X 13, 041039 (2023)",10.1103/PhysRevX.13.041039

@@ -1,0 +1,6 @@
+detector,nombre,pais,latitud,longitud,longitud_brazo_m,operador,ano_inicio
+H1,LIGO Hanford,Estados Unidos,46.4551,-119.4077,4000,LIGO Scientific Collaboration,2015
+L1,LIGO Livingston,Estados Unidos,30.5629,-90.7742,4000,LIGO Scientific Collaboration,2015
+V1,Virgo,Italia,43.6314,10.5045,3000,European Gravitational Observatory,2017
+K1,KAGRA,Japón,36.4123,137.3062,3000,"ICRR, Universidad de Tokio",2020
+G1,GEO 600,Alemania,52.2465,9.8083,600,Max Planck Institute for Gravitational Physics,2002

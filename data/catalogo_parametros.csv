@@ -1,0 +1,12 @@
+parametro,simbolo,unidad,descripcion
+mass_1_source,m_1,M_sun,"Masa de la componente más masiva, en el marco de la fuente."
+mass_2_source,m_2,M_sun,"Masa de la componente menos masiva, en el marco de la fuente."
+total_mass_source,M,M_sun,Masa total del sistema antes de la fusión.
+chirp_mass_source,M_chirp,M_sun,Masa de chirp; el parámetro de masa mejor determinado.
+final_mass_source,M_f,M_sun,Masa del remanente tras la fusión.
+luminosity_distance,d_L,Mpc,Distancia luminosa inferida de la amplitud de la señal.
+redshift,z,adimensional,Corrimiento al rojo derivado de la distancia luminosa.
+chi_eff,chi_eff,adimensional,Espín efectivo proyectado sobre el momento angular orbital.
+snr_red,rho,adimensional,Relación señal-ruido de red del filtrado adaptado.
+far,FAR,1/yr,Tasa de falsa alarma; menor significa mayor confianza.
+p_astro,p_astro,adimensional,Probabilidad de que el evento sea de origen astrofísico.

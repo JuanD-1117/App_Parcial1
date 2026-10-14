@@ -1,0 +1,7 @@
+streamlit==1.49.1
+pandas==2.2.3
+numpy==2.2.6
+plotly==6.3.0
+sqlalchemy==2.0.35
+pymysql==1.1.1
+cryptography==43.0.1   # pymysql lo necesita para caching_sha2_password de MySQL 8
