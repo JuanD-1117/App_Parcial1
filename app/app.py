@@ -43,6 +43,9 @@ MODULOS = [
     "✏️ Gestión de datos (CRUD)",
 ]
 MODULOS_CON_FILTROS = MODULOS[1:4]
+# Permite enlazar un módulo directamente: http://localhost:8502/?modulo=analisis
+SLUGS = dict(zip(["inicio", "dashboard", "explorador", "analisis", "detectores", "consultas",
+                  "crud"], MODULOS))
 
 
 # ---------------------------------------------------------------------------------------
@@ -112,7 +115,9 @@ def url_gwosc(fila: pd.Series) -> str | None:
 def barra_lateral(df: pd.DataFrame) -> tuple[str, dict]:
     st.sidebar.title("🌌 GW Explorer")
     st.sidebar.caption("Ondas gravitacionales · GWOSC · LIGO/Virgo/KAGRA")
-    modulo = st.sidebar.radio("Módulo", MODULOS, label_visibility="collapsed")
+    inicial = SLUGS.get(st.query_params.get("modulo", ""), MODULOS[0])
+    modulo = st.sidebar.radio("Módulo", MODULOS, index=MODULOS.index(inicial),
+                              label_visibility="collapsed")
 
     filtros: dict = {}
     if modulo in MODULOS_CON_FILTROS:
@@ -126,7 +131,7 @@ def barra_lateral(df: pd.DataFrame) -> tuple[str, dict]:
             format_func=lambda t: f"{t} — {fisica.DESCRIPCION_TIPOS[t]}")
         detectores = sorted(participaciones().detector.unique())
         filtros["detectores"] = st.sidebar.multiselect(
-            "Observado por detector", detectores,
+            "Observado por detector", detectores, placeholder="Todos (sin filtro)",
             help="Deja solo los eventos en los que participó al menos uno de estos detectores. "
                  "Vacío = sin filtro.")
         filtros["masa_total"] = _rango(df, "masa_total", "Masa total [M☉]")
@@ -334,7 +339,7 @@ def modulo_dashboard(df: pd.DataFrame, total: int) -> None:
                       line_width=0, annotation_text="estrellas de neutrones",
                       annotation_position="bottom right")
         st.plotly_chart(fig, width="stretch")
-        explicacion("Ningún punto queda sobre la diagonal porque por convención m₁ ≥ m₂. La "
+        explicacion("Ningún punto queda por encima de la diagonal porque por convención m₁ ≥ m₂. La "
                     "franja roja (< 3 M☉) es la región de las estrellas de neutrones; por encima "
                     "solo caben agujeros negros.")
 
@@ -385,39 +390,37 @@ def modulo_explorador(df: pd.DataFrame) -> None:
         if fila.clasificacion_ambigua:
             st.warning("Clasificación ambigua: alguna componente está entre 2 y 5 M☉, donde no "
                        "se distingue una estrella de neutrones de un agujero negro.")
-        c = st.columns(6)
+        c = st.columns(3)
         c[0].metric("Fecha (UTC)", f"{fila.utc:%Y-%m-%d}")
         c[1].metric("Masa total", _fmt(fila.masa_total, "M☉"))
         c[2].metric("Distancia", _fmt(fila.distancia_mpc, "Mpc", 0))
-        c[3].metric("SNR de red", _fmt(fila.snr_red))
-        c[4].metric("Energía radiada", _fmt(fila.energia_radiada_msun, "M☉c²", 2),
+        c = st.columns(3)
+        c[0].metric("SNR de red", _fmt(fila.snr_red))
+        c[1].metric("Energía radiada", _fmt(fila.energia_radiada_msun, "M☉c²", 2),
                     help="M total − M final: masa convertida en ondas gravitacionales.")
-        c[5].metric("Red", fila.red)
+        c[2].metric("Red de detectores", fila.red)
         st.caption(f"GPS {fila.gps_tiempo:.4f} · campaña {fila.campana} · catálogo "
                    f"{fila.catalogo} · versión {fila.version} · masa total "
                    f"{fila.masa_total_origen}")
 
-        izquierda, derecha = st.columns([3, 2])
         med = mediciones(int(fila.evento_id))
-        with izquierda:
-            st.markdown("**Parámetros medidos** (mediana e intervalo de credibilidad al 90 %)")
-            vista = med.assign(intervalo=med.apply(_intervalo, axis=1))[
-                ["simbolo", "descripcion", "valor", "intervalo", "unidad"]]
-            vista.columns = ["Símbolo", "Descripción", "Valor", "Intervalo 90 %", "Unidad"]
-            tabla(vista)
-        with derecha:
-            masas = med[med.unidad == "M_sun"].dropna(subset=["valor"])
-            if not masas.empty:
-                fig = go.Figure(go.Scatter(
-                    x=masas.valor, y=masas.simbolo, mode="markers",
-                    error_x=dict(type="data", symmetric=False,
-                                 array=(masas.valor_max - masas.valor).fillna(0),
-                                 arrayminus=(masas.valor - masas.valor_min).fillna(0))))
-                fig.update_layout(title="Masas con su incertidumbre", xaxis_title="M☉",
-                                  height=320, margin=dict(l=10, r=10, t=40, b=10))
-                st.plotly_chart(fig, width="stretch")
-                explicacion("Las barras son el intervalo al 90 %. La masa final es menor que la "
-                            "total: la diferencia se radió como ondas gravitacionales.")
+        st.markdown("**Parámetros medidos** (mediana e intervalo de credibilidad al 90 %)")
+        vista = med.assign(intervalo=med.apply(_intervalo, axis=1))[
+            ["simbolo", "descripcion", "valor", "intervalo", "unidad"]]
+        vista.columns = ["Símbolo", "Descripción", "Valor", "Intervalo 90 %", "Unidad"]
+        tabla(vista)
+        masas = med[med.unidad == "M_sun"].dropna(subset=["valor"])
+        if not masas.empty:
+            fig = go.Figure(go.Scatter(
+                x=masas.valor, y=masas.simbolo, mode="markers",
+                error_x=dict(type="data", symmetric=False,
+                             array=(masas.valor_max - masas.valor).fillna(0),
+                             arrayminus=(masas.valor - masas.valor_min).fillna(0))))
+            fig.update_layout(title="Masas con su incertidumbre", xaxis_title="M☉",
+                              height=320, margin=dict(l=10, r=10, t=40, b=10))
+            st.plotly_chart(fig, width="stretch")
+            explicacion("Las barras son el intervalo al 90 %. La masa final es menor que la "
+                        "total: la diferencia se radió como ondas gravitacionales.")
 
     with st.container(border=True):
         st.subheader("Detectores y datos de strain")
@@ -642,8 +645,10 @@ cielo.
         fig = px.imshow(matriz, text_auto=True, color_continuous_scale="Blues", aspect="auto",
                         labels={"x": "Campaña", "y": "Detector", "color": "Eventos"})
         st.plotly_chart(fig, width="stretch")
-        explicacion("Virgo (V1) se une en agosto de 2017 (final de O2); GEO 600 (G1) y KAGRA "
-                    "(K1) aportan datos solo en algunos eventos de O3.")
+        explicacion("Virgo (V1) aporta datos desde la recta final de O2 (julio de 2017). "
+                    "GEO 600 (G1) solo participa en GW170817 y KAGRA (K1) en ningún evento de "
+                    "este catálogo: se unió a la red al final de O3, sin detecciones confirmadas. "
+                    "H1 no suma 90 porque algunos eventos se vieron sin Hanford.")
     with derecha, st.container(border=True):
         st.subheader("Archivos de strain publicados")
         strain = p.groupby(["campana", "detector"]).archivos_strain.sum().reset_index()
