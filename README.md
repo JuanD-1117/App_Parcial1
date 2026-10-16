@@ -15,13 +15,6 @@ GWTC-1, GWTC-2.1 y GWTC-3 (campañas O1 a O3b, 2015–2020), con estos datos por
 - tiempo GPS/UTC
 - archivos de strain publicados
 
-## Guía de exposición
-
-[`docs/Guia_App_Parcial1.pdf`](docs/Guia_App_Parcial1.pdf) (40 páginas) explica el proyecto desde
-cero: la física, el modelo de datos, el diseño de la app y cada pantalla, con un guion para
-exponerlo, una demostración paso a paso, preguntas probables y un glosario. La fuente LaTeX está en
-`docs/guia/` y se compila con `latexmk -pdf guia_app.tex`.
-
 Cada módulo se puede abrir directamente por URL: `http://localhost:8502/?modulo=analisis`
 (`inicio`, `dashboard`, `explorador`, `analisis`, `detectores`, `consultas`, `crud`).
 
